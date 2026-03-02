@@ -11,18 +11,19 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/forms", formRoutes);
+
 // Test Route
 app.get("/", (req, res) => {
-  res.json({ message: "Server is running" });
+  res.json({ message: "Server is running 🚀" });
 });
-
-app.use("/api/forms", formRoutes);
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("MongoDB Connected");
+    console.log("MongoDB Connected ✅");
     app.listen(process.env.PORT, () => {
       console.log(`Server running on port ${process.env.PORT}`);
     });
