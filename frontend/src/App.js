@@ -5,6 +5,7 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
+import BulkImport from "./pages/BulkImport";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -20,6 +21,14 @@ function App() {
           element={
             <PrivateRoute>
               <Dashboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/bulk-import"
+          element={
+            <PrivateRoute>
+              <BulkImport />
             </PrivateRoute>
           }
         />

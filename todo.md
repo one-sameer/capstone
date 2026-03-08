@@ -9,7 +9,7 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 - [ ] Docker-first setup for local development and deployment.
 - [ ] Use exact dependency versions only. No caret (`^`) or tilde (`~`) ranges.
 - [ ] Commit lockfiles and keep Docker base images version-pinned.
-- [ ] PDF generation must use WeasyPrint.
+- [ ] PDF generation must use PDFKit in Node.js, with WeasyPrint as backup.
 - [ ] Email flow must use SMTP with credentials stored only in environment variables.
 - [ ] Rotate any SMTP password that has already been exposed outside secure env storage.
 
@@ -21,13 +21,12 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 
 ### Backend
 - [ ] Keep Node/Express as primary API because the current project already uses it.
-- [ ] Add a Python PDF service for WeasyPrint-based HTML-to-PDF generation.
+- [ ] Integrate PDFKit in Node.js for PDF generation, with WeasyPrint as backup.
 - [ ] Use MongoDB for users, form templates, submissions, workflow definitions, and approval logs.
 
 ### Containers
 - [ ] `frontend` container
 - [ ] `backend` container
-- [ ] `pdf-service` container
 - [ ] `mongodb` container
 - [ ] optional `mailpit` container for local SMTP testing
 
@@ -35,13 +34,11 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 
 - [ ] Pin root/base Docker images to exact versions, for example:
 	- [ ] Node image pinned to a fixed tag
-	- [ ] Python image pinned to a fixed tag
 	- [ ] Mongo image pinned to a fixed tag
 - [ ] Remove version ranges from [frontend/package.json](frontend/package.json).
 - [ ] Remove version ranges from [backend/package.json](backend/package.json) if any remain.
 - [ ] Keep [frontend/package-lock.json](frontend/package-lock.json) committed.
 - [ ] Keep [backend/package-lock.json](backend/package-lock.json) committed.
-- [ ] Add pinned Python dependency file for the PDF service.
 - [ ] Add a Docker Compose file with fixed image versions.
 
 ## 5. Core product modules
@@ -103,7 +100,7 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 ### F. PDF generation
 - [ ] Replace current basic PDF generation with branded output.
 - [ ] Use institute logo and header.
-- [ ] Use WeasyPrint templates for clean layouts.
+- [ ] Use PDFKit templates for clean layouts, with WeasyPrint as backup if needed.
 - [ ] Support dynamic field rendering from stored form schema.
 - [ ] Generate final PDF after submission and after final approval if required.
 - [ ] Store PDF path/metadata for later download.
@@ -157,10 +154,10 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 
 - [ ] Write [Dockerfile](Dockerfile) or service Dockerfiles with exact base image versions.
 - [ ] Add `docker-compose.yml` with fixed service versions.
-- [ ] Add environment variable examples for backend, frontend, PDF service, and MongoDB.
+- [ ] Add environment variable examples for backend, frontend, and MongoDB.
 - [ ] Ensure one command can boot the full stack locally.
 - [ ] Add persistent Mongo volume.
-- [ ] Add health checks for backend and PDF service.
+- [ ] Add health checks for backend.
 
 ## 11. Suggested implementation order
 
@@ -186,7 +183,7 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 - [ ] Add status tracking and audit logs.
 
 ### Phase 5 - PDF and polish
-- [ ] Build branded WeasyPrint templates.
+- [ ] Build branded PDFKit templates.
 - [ ] Add logo/header support.
 - [ ] Improve final PDF design.
 - [ ] Add preview/download experience.
