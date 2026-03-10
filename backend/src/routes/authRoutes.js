@@ -122,7 +122,7 @@ router.get("/generate-pdf", protect, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("-password");
 
-    const doc = new PDFDocument();
+    const doc = new PDFDocument({ margin: 50 });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -132,10 +132,30 @@ router.get("/generate-pdf", protect, async (req, res) => {
 
     doc.pipe(res);
 
-    doc.fontSize(20).text("User Profile", { align: "center" });
-    doc.moveDown();
+    // Simple institutional header (logo placeholder + title)
+    doc
+      .fontSize(22)
+      .font("Helvetica-Bold")
+      .text("Indian Institute of Technology Patna", { align: "center" });
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Faculty & Staff Portal", { align: "center" });
+    doc.moveDown(0.5);
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(doc.page.width - 50, doc.y)
+      .stroke();
+    doc.moveDown(1.2);
 
-    doc.fontSize(14).text(`Name: ${user.name}`);
+    doc
+      .fontSize(18)
+      .font("Helvetica-Bold")
+      .text("User Profile", { align: "center" });
+    doc.moveDown(1);
+
+    doc.fontSize(13).font("Helvetica");
+    doc.text(`Name: ${user.name}`);
     doc.text(`Email: ${user.email}`);
     doc.text(`Role: ${user.role}`);
     doc.text(`Generated At: ${new Date().toLocaleString()}`);
