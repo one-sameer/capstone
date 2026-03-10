@@ -3,7 +3,7 @@ const FormTemplate = require("../models/FormTemplate");
 // @desc Create new form template
 const createTemplate = async (req, res) => {
   try {
-    const { title, description, fields } = req.body;
+    const { title, description, fields, approvalStages } = req.body;
 
     if (!title || !fields || fields.length === 0) {
       return res.status(400).json({ message: "Title and fields required" });
@@ -13,7 +13,8 @@ const createTemplate = async (req, res) => {
       title,
       description,
       fields,
-      createdBy: req.user.id, // changed here
+      approvalStages: Array.isArray(approvalStages) ? approvalStages : [],
+      createdBy: req.user.id,
     });
 
     res.status(201).json(template);

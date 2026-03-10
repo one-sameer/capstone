@@ -1,14 +1,18 @@
 const FormSubmission = require("../models/FormSubmission");
 const FormTemplate = require("../models/FormTemplate");
+const User = require("../models/User");
 const PDFDocument = require("pdfkit");
 
 // @desc Submit a form
+// Body: { templateId, responses, parentSubmissionId? }
 const submitForm = async (req, res) => {
   try {
-    const { templateId, responses } = req.body;
+    const { templateId, responses, parentSubmissionId } = req.body;
 
     if (!templateId || !responses) {
-      return res.status(400).json({ message: "Template and responses required" });
+      return res
+        .status(400)
+        .json({ message: "Template and responses required" });
     }
 
     // Ensure template exists
@@ -16,30 +20,51 @@ const submitForm = async (req, res) => {
     if (!template) {
       return res.status(404).json({ message: "Template not found" });
     }
-    
+
+    let version = 1;
+    let parentSubmission = null;
+
+    if (parentSubmissionId) {
+      const parent = await FormSubmission.findOne({
+        _id: parentSubmissionId,
+        submittedBy: req.user.id,
+      });
+
+      if (!parent) {
+        return res
+          .status(404)
+          .json({ message: "Parent submission not found for this user" });
+      }
+
+      version = (parent.version || 1) + 1;
+      parentSubmission = parent._id;
+    }
+
     const submission = await FormSubmission.create({
       template: templateId,
       submittedBy: req.user.id,
-      responses: responses,
+      responses,
       status: "submitted",
+      version,
+      parentSubmission,
+      approvalStages: template.approvalStages || [],
+      currentStageIndex: 0,
     });
-    console.log("here");
 
     res.status(201).json(submission);
   } catch (error) {
-    
     console.error(error);
     res.status(500).json({ message: "Failed to submit form" });
   }
 };
 
-// @desc Get my submissions
+// @desc Get my submissions (history)
 const getMySubmissions = async (req, res) => {
   try {
     const submissions = await FormSubmission.find({
       submittedBy: req.user.id,
     })
-      .populate("template", "title description")
+      .populate("template", "title description approvalStages")
       .sort({ createdAt: -1 });
 
     res.json(submissions);
@@ -48,123 +73,244 @@ const getMySubmissions = async (req, res) => {
   }
 };
 
-// @desc Generate PDF for a submission
-const generateSubmissionPDF = async (req, res) => {
+// @desc Get a single submission (for viewing / edit-as-new)
+const getSubmissionById = async (req, res) => {
   try {
-    const { templateId } = req.params;
-
-    // Find the submission
-    const submission = await FormSubmission.findOne({
-      template: templateId,
-      submittedBy: req.user.id,
-    })
-      .populate("template")
-      .populate("submittedBy", "name email");
+    const submission = await FormSubmission.findById(req.params.id)
+      .populate("template", "title description fields approvalStages")
+      .populate("submittedBy", "name email role")
+      .populate("approvals.user", "name email role");
 
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }
 
-    const template = submission.template;
-    const doc = new PDFDocument({ margin: 40 });
+    // Allow owner or any higher-level role to view
+    const isOwner =
+      submission.submittedBy &&
+      submission.submittedBy._id.toString() === req.user.id;
+
+    const privilegedRoles = ["Admin", "HOD", "Dean", "Director"];
+    const isPrivileged =
+      req.user.role && privilegedRoles.includes(String(req.user.role));
+
+    if (!isOwner && !isPrivileged) {
+      return res.status(403).json({ message: "Not authorized to view" });
+    }
+
+    res.json(submission);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch submission" });
+  }
+};
+
+// @desc List submissions pending approval for current user
+const getPendingApprovals = async (req, res) => {
+  try {
+    const role = req.user.role;
+    if (!role) {
+      return res
+        .status(400)
+        .json({ message: "User does not have a role assigned" });
+    }
+
+    const submissions = await FormSubmission.find({
+      status: "submitted",
+      approvalStages: { $in: [role] },
+      $expr: {
+        $eq: [
+          { $arrayElemAt: ["$approvalStages", "$currentStageIndex"] },
+          role,
+        ],
+      },
+    })
+      .populate("template", "title description")
+      .populate("submittedBy", "name email role");
+
+    res.json(submissions);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Failed to fetch pending approvals" });
+  }
+};
+
+// @desc Approve or reject a submission
+// Body: { action: "approved" | "rejected", comment? }
+const actOnSubmission = async (req, res) => {
+  try {
+    const { action, comment } = req.body;
+    const role = req.user.role;
+
+    if (!["approved", "rejected"].includes(action)) {
+      return res.status(400).json({ message: "Invalid action" });
+    }
+
+    const submission = await FormSubmission.findById(req.params.id);
+
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    if (submission.status !== "submitted") {
+      return res
+        .status(400)
+        .json({ message: "Submission is not pending approval" });
+    }
+
+    const stages = submission.approvalStages || [];
+    const currentRole = stages[submission.currentStageIndex] || null;
+
+    if (!currentRole || currentRole !== role) {
+      return res.status(403).json({
+        message:
+          "You are not the current approver for this submission",
+      });
+    }
+
+    submission.approvals.push({
+      role,
+      user: req.user.id,
+      action,
+      comment: comment || "",
+    });
+
+    if (action === "rejected") {
+      submission.status = "rejected";
+    } else {
+      // Move to next stage or mark approved
+      if (submission.currentStageIndex + 1 >= stages.length) {
+        submission.status = "approved";
+      } else {
+        submission.currentStageIndex += 1;
+      }
+    }
+
+    await submission.save();
+
+    res.json(submission);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Failed to update submission" });
+  }
+};
+
+// @desc Generate PDF for a submission
+const generateSubmissionPDF = async (req, res) => {
+  try {
+    const submission = await FormSubmission.findById(req.params.id)
+      .populate("template", "title fields")
+      .populate("submittedBy", "name email role");
+
+    if (!submission) {
+      return res.status(404).json({ message: "Submission not found" });
+    }
+
+    const isOwner =
+      submission.submittedBy &&
+      submission.submittedBy._id.toString() === req.user.id;
+    const privilegedRoles = ["Admin", "HOD", "Dean", "Director"];
+    const isPrivileged =
+      req.user.role && privilegedRoles.includes(String(req.user.role));
+
+    if (!isOwner && !isPrivileged) {
+      return res.status(403).json({ message: "Not authorized to download" });
+    }
+
+    const doc = new PDFDocument({ margin: 50 });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=${template.title.replace(/\s+/g, "_")}.pdf`
+      `attachment; filename=form-${submission._id}.pdf`
     );
 
     doc.pipe(res);
 
-    const pageWidth = doc.page.width - 80;
-    let yPos = doc.y;
+    // Header (logo placeholder + institute title)
+    doc
+      .fontSize(22)
+      .font("Helvetica-Bold")
+      .text("Indian Institute of Technology Patna", { align: "center" });
+    doc
+      .fontSize(12)
+      .font("Helvetica")
+      .text("Online Forms Portal", { align: "center" });
+    doc.moveDown(0.5);
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(doc.page.width - 50, doc.y)
+      .stroke();
+    doc.moveDown(1);
 
-    // Title Box
-    doc.fontSize(16).font("Helvetica-Bold");
-    const titleHeight = 50;
-    doc.rect(40, yPos, pageWidth, titleHeight).stroke();
-    doc.text(template.title, 50, yPos + 15, {
-      width: pageWidth - 20,
-      align: "center",
-    });
-    yPos += titleHeight + 10;
-    doc.y = yPos;
-
-    // Description Box (if exists)
-    if (template.description) {
-      doc.fontSize(10).font("Helvetica-Oblique");
-      const descHeight = 40;
-      doc.rect(40, yPos, pageWidth, descHeight).stroke();
-      doc.text(template.description, 50, yPos + 10, {
-        width: pageWidth - 20,
+    doc
+      .fontSize(16)
+      .font("Helvetica-Bold")
+      .text(submission.template.title || "Form Submission", {
         align: "center",
       });
-      yPos += descHeight + 10;
-      doc.y = yPos;
-    }
+    doc.moveDown();
 
-    // Add date box in top right
-    const dateBoxWidth = 150;
-    const dateBoxHeight = 30;
-    const dateBoxX = doc.page.width - 40 - dateBoxWidth;
     doc.fontSize(10).font("Helvetica");
-    doc.rect(dateBoxX, yPos, dateBoxWidth, dateBoxHeight).stroke();
-    doc.text("Date:", dateBoxX + 5, yPos + 8);
-    doc.text(new Date(submission.createdAt).toLocaleDateString(), dateBoxX + 45, yPos + 8);
-    
-    yPos += dateBoxHeight + 15;
-    doc.y = yPos;
+    doc.text(`Submitted by: ${submission.submittedBy.name}`);
+    doc.text(`Email: ${submission.submittedBy.email}`);
+    doc.text(`Role: ${submission.submittedBy.role}`);
+    doc.text(`Submitted at: ${submission.createdAt.toLocaleString()}`);
+    doc.text(`Status: ${submission.status}`);
+    doc.moveDown();
 
-    // Form Fields - Each in its own box
-    template.fields.forEach((field, index) => {
-      const response = submission.responses.get(field.name) || "";
-      
-      // Check if we need a new page
-      if (yPos > doc.page.height - 120) {
-        doc.addPage();
-        yPos = 40;
-      }
+    doc.fontSize(12).font("Helvetica-Bold").text("Responses", { underline: true });
+    doc.moveDown(0.5);
 
-      // Field box
-      const boxHeight = field.type === "textarea" ? 80 : 40;
-      doc.rect(40, yPos, pageWidth, boxHeight).stroke();
-
-      // Label
-      doc.fontSize(10).font("Helvetica-Bold");
-      doc.text(field.label, 50, yPos + 8, { continued: false });
-
-      // Response (will be empty for paperOnly fields since user didn't fill them)
-      if (response) {
-        doc.fontSize(10).font("Helvetica");
-        const responseY = field.type === "textarea" ? yPos + 28 : yPos + 22;
-        doc.text(response, 50, responseY, {
-          width: pageWidth - 20,
-        });
-      }
-
-      yPos += boxHeight + 5;
-      doc.y = yPos;
+    const fields = submission.template.fields || [];
+    fields.forEach((field) => {
+      const value = submission.responses.get(field.name);
+      doc
+        .font("Helvetica-Bold")
+        .text(`${field.label}: `, { continued: true });
+      doc.font("Helvetica").text(
+        value !== undefined && value !== null ? String(value) : "-"
+      );
+      doc.moveDown(0.3);
     });
 
-    // Footer note
-    yPos += 20;
-    doc.fontSize(8).font("Helvetica");
-    doc.text(
-      `Generated on ${new Date().toLocaleString()}`,
-      40,
-      yPos,
-      { align: "center", width: pageWidth }
-    );
+    if (submission.approvals && submission.approvals.length > 0) {
+      doc.moveDown();
+      doc.fontSize(12).text("Approval History", { underline: true });
+      doc.moveDown(0.5);
+
+      submission.approvals.forEach((log) => {
+        doc
+          .font("Helvetica-Bold")
+          .text(
+            `${log.role} - ${log.action.toUpperCase()} on ${new Date(
+              log.actedAt
+            ).toLocaleString()}`
+          );
+        if (log.comment) {
+          doc
+            .font("Helvetica")
+            .text(`Comment: ${log.comment}`, { indent: 10 });
+        }
+        doc.moveDown(0.4);
+      });
+    }
 
     doc.end();
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Failed to generate PDF" });
+    res
+      .status(500)
+      .json({ message: "Failed to generate submission PDF" });
   }
 };
 
 module.exports = {
   submitForm,
   getMySubmissions,
+  getSubmissionById,
+  getPendingApprovals,
+  actOnSubmission,
   generateSubmissionPDF,
 };
