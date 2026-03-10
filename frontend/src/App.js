@@ -6,6 +6,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import BulkImport from "./pages/BulkImport";
+import AdminFormBuilder from "./pages/AdminFormBuilder";
+import FillForm from "./pages/FillForm";
 import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
@@ -29,6 +31,22 @@ function App() {
           element={
             <PrivateRoute>
               <BulkImport />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/form-builder"
+          element={
+            <PrivateRoute>
+              <AdminFormBuilder />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fill-form/:templateId"
+          element={
+            <PrivateRoute>
+              <FillForm />
             </PrivateRoute>
           }
         />

@@ -22,6 +22,10 @@ const fieldSchema = new mongoose.Schema({
     type: [String],
     default: [],
   },
+  paperOnly: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const formTemplateSchema = new mongoose.Schema(
