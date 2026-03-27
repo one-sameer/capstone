@@ -1,8 +1,81 @@
 const FormTemplate = require("../models/FormTemplate");
 
 const GEN_ADMIN_TEMPLATE_CODE = "gen-admin";
+const GEN_ADMIN_VEHICLE_REQUISITION_CODE = "gen-admin-vehicle-requisition-transport";
 const SECURITY_CAMPUS_LEAVE_FEMALE_CODE = "security-campus-leave-female";
 const CC_LDAP_ACCOUNT_REQUEST_CODE = "cc-ldap-account-request";
+const FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE = "finance-procurement-recommendation-sanction-double-bid-inr";
+
+const GEN_ADMIN_TEMPLATE = {
+  code: GEN_ADMIN_TEMPLATE_CODE,
+  title: "General Administration Self-Declaration",
+  description: "A self-declaration form for general administration purposes.",
+  section: "genadmin",
+  fields: [
+    { label: "Salutation", name: "salutation", type: "select", required: true, options: ["Dr.", "Mr.", "Ms."] },
+    { label: "Full Name", name: "fullName", type: "text", required: true },
+    { label: "Designation", name: "designation", type: "text", required: true },
+    { label: "Dept./Section/Centre", name: "department", type: "text", required: true },
+    { label: "Employee Signature Name", name: "employeeSignatureName", type: "text", required: true },
+    { label: "Employee Number", name: "empNo", type: "text", required: true },
+    { label: "Place", name: "place", type: "text", required: true },
+    { label: "Date", name: "declarationDate", type: "date", required: true },
+  ],
+  approvalStages: [],
+};
+
+const GEN_ADMIN_VEHICLE_REQUISITION_TEMPLATE = {
+  code: GEN_ADMIN_VEHICLE_REQUISITION_CODE,
+  title: "Indent for Transport",
+  description: "General Administration vehicle requisition form for transport requirement.",
+  section: "genadmin",
+  fields: [
+    { label: "Ref No.", name: "refNo", type: "text", required: false },
+    { label: "Dated", name: "dated", type: "date", required: false },
+    {
+      label: "Name, Designation & Dept./Section/Centre of the Indentor",
+      name: "indentorDetails",
+      type: "text",
+      required: true,
+    },
+    { label: "Type of vehicle required", name: "vehicleTypeRequired", type: "text", required: true },
+    { label: "Vehicle required on (date)", name: "vehicleRequiredDate", type: "date", required: true },
+    { label: "Vehicle required at (place)", name: "vehicleRequiredPlace", type: "text", required: true },
+    { label: "Vehicle required at (time)", name: "vehicleRequiredTime", type: "text", required: true },
+    { label: "Vehicle required up to", name: "vehicleRequiredUpto", type: "text", required: true },
+    { label: "Place(s) to be visited", name: "placesToBeVisited", type: "text", required: true },
+    {
+      label: "Name(s) of the guest(s) (if applicable)",
+      name: "guestNames",
+      type: "text",
+      required: false,
+    },
+    { label: "Flight No./Train No.", name: "flightOrTrainNo", type: "text", required: false },
+    {
+      label: "Arrival / Departure time",
+      name: "arrivalDepartureTime",
+      type: "text",
+      required: false,
+    },
+    {
+      label: "Is it official",
+      name: "isOfficial",
+      type: "select",
+      required: true,
+      options: ["Yes", "No"],
+    },
+    { label: "Official purpose", name: "officialPurpose", type: "textarea", required: false },
+    { label: "Date", name: "signatureDate", type: "date", required: true },
+    { label: "Vehicle No. (office use)", name: "allottedVehicleNo", type: "text", required: false },
+    { label: "Type (office use)", name: "allottedVehicleType", type: "text", required: false },
+    { label: "Driver (office use)", name: "allottedDriver", type: "text", required: false },
+    { label: "Driver report to", name: "driverReportTo", type: "text", required: false },
+    { label: "Report date", name: "driverReportDate", type: "date", required: false },
+    { label: "Report place", name: "driverReportPlace", type: "text", required: false },
+    { label: "Report time", name: "driverReportTime", type: "text", required: false },
+  ],
+  approvalStages: [],
+};
 
 const SECURITY_CAMPUS_LEAVE_FEMALE_TEMPLATE = {
   code: SECURITY_CAMPUS_LEAVE_FEMALE_CODE,
@@ -43,26 +116,75 @@ const CC_LDAP_ACCOUNT_REQUEST_TEMPLATE = {
   approvalStages: [],
 };
 
+const FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_TEMPLATE = {
+  code: FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE,
+  title: "Recommendation cum Sanction Sheet for Purchase (Double Bid Tendering - INR)",
+  description: "Finance procurement recommendation and sanction sheet for purchase through double bid tendering process.",
+  section: "fin",
+  fields: [
+    { label: "Purchase Of", name: "purchaseOf", type: "text", required: true },
+    { label: "Date", name: "sheetDate", type: "date", required: true },
+    { label: "NIQ/Tender No.", name: "niqTenderNo", type: "text", required: true },
+    { label: "NIQ/Tender Date", name: "niqTenderDate", type: "date", required: true },
+    { label: "Vendors Responded", name: "vendorsRespondedCount", type: "number", required: true },
+    { label: "Price Bids Opened On", name: "priceBidsOpenedOn", type: "date", required: false },
+    { label: "Purchase Committee Members", name: "purchaseCommitteeMembers", type: "textarea", required: false },
+    { label: "File No.", name: "fileNo", type: "text", required: false },
+    { label: "Year of Sanction", name: "yearOfSanction", type: "text", required: false },
+    { label: "Department", name: "department", type: "text", required: true },
+    { label: "Category", name: "category", type: "text", required: false },
+    { label: "Vendor Name", name: "vendorName", type: "text", required: true },
+    { label: "Vendor Address Line 1", name: "vendorAddressLine1", type: "text", required: false },
+    { label: "Vendor Address Line 2", name: "vendorAddressLine2", type: "text", required: false },
+
+    { label: "Item 1 Description", name: "item1Description", type: "text", required: false },
+    { label: "Item 1 Rate", name: "item1Rate", type: "text", required: false },
+    { label: "Item 1 Quantity", name: "item1Quantity", type: "text", required: false },
+    { label: "Item 1 Amount", name: "item1Amount", type: "text", required: false },
+
+    { label: "Item 2 Description", name: "item2Description", type: "text", required: false },
+    { label: "Item 2 Rate", name: "item2Rate", type: "text", required: false },
+    { label: "Item 2 Quantity", name: "item2Quantity", type: "text", required: false },
+    { label: "Item 2 Amount", name: "item2Amount", type: "text", required: false },
+
+    { label: "Item 3 Description", name: "item3Description", type: "text", required: false },
+    { label: "Item 3 Rate", name: "item3Rate", type: "text", required: false },
+    { label: "Item 3 Quantity", name: "item3Quantity", type: "text", required: false },
+    { label: "Item 3 Amount", name: "item3Amount", type: "text", required: false },
+
+    { label: "Item 4 Description", name: "item4Description", type: "text", required: false },
+    { label: "Item 4 Rate", name: "item4Rate", type: "text", required: false },
+    { label: "Item 4 Quantity", name: "item4Quantity", type: "text", required: false },
+    { label: "Item 4 Amount", name: "item4Amount", type: "text", required: false },
+
+    { label: "Item 5 Description", name: "item5Description", type: "text", required: false },
+    { label: "Item 5 Rate", name: "item5Rate", type: "text", required: false },
+    { label: "Item 5 Quantity", name: "item5Quantity", type: "text", required: false },
+    { label: "Item 5 Amount", name: "item5Amount", type: "text", required: false },
+
+    { label: "GST Percentage", name: "gstPercentage", type: "text", required: false },
+    { label: "GST Amount", name: "gstAmount", type: "text", required: false },
+    { label: "Additional Charge 1 Label", name: "additionalCharge1Label", type: "text", required: false },
+    { label: "Additional Charge 1 Amount", name: "additionalCharge1Amount", type: "text", required: false },
+    { label: "Additional Charge 2 Label", name: "additionalCharge2Label", type: "text", required: false },
+    { label: "Additional Charge 2 Amount", name: "additionalCharge2Amount", type: "text", required: false },
+    { label: "Total Amount", name: "totalAmount", type: "text", required: false },
+
+    { label: "Member 1", name: "member1", type: "text", required: false },
+    { label: "Member 2", name: "member2", type: "text", required: false },
+    { label: "Member 3", name: "member3", type: "text", required: false },
+    { label: "Member 4", name: "member4", type: "text", required: false },
+  ],
+  approvalStages: [],
+};
+
 const getGenAdminTemplate = async (req, res) => {
   try {
     let template = await FormTemplate.findOne({ code: GEN_ADMIN_TEMPLATE_CODE });
 
     if (!template) {
       template = await FormTemplate.create({
-        code: GEN_ADMIN_TEMPLATE_CODE,
-        title: "General Administration Self-Declaration",
-        description: "A self-declaration form for general administration purposes.",
-        fields: [
-          { label: "Salutation", name: "salutation", type: "select", required: true, options: ["Dr.", "Mr.", "Ms."] },
-          { label: "Full Name", name: "fullName", type: "text", required: true },
-          { label: "Designation", name: "designation", type: "text", required: true },
-          { label: "Dept./Section/Centre", name: "department", type: "text", required: true },
-          { label: "Employee Signature Name", name: "employeeSignatureName", type: "text", required: true },
-          { label: "Employee Number", name: "empNo", type: "text", required: true },
-          { label: "Place", name: "place", type: "text", required: true },
-          { label: "Date", name: "declarationDate", type: "date", required: true },
-        ],
-        approvalStages: [],
+        ...GEN_ADMIN_TEMPLATE,
         createdBy: req.user.id,
       });
     }
@@ -71,6 +193,24 @@ const getGenAdminTemplate = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Failed to load general administration self declaration template" });
+  }
+};
+
+const getGenAdminVehicleRequisitionTemplate = async (req, res) => {
+  try {
+    let template = await FormTemplate.findOne({ code: GEN_ADMIN_VEHICLE_REQUISITION_CODE });
+
+    if (!template) {
+      template = await FormTemplate.create({
+        ...GEN_ADMIN_VEHICLE_REQUISITION_TEMPLATE,
+        createdBy: req.user.id,
+      });
+    }
+
+    return res.json(template);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to load general administration vehicle requisition template" });
   }
 };
 
@@ -110,6 +250,33 @@ const getComputerCenterLdapAccountRequestTemplate = async (req, res) => {
   }
 };
 
+const getFinanceProcurementRecommendationSanctionTemplate = async (req, res) => {
+  try {
+    let template = await FormTemplate.findOne({ code: FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE });
+
+    if (!template) {
+      template = await FormTemplate.create({
+        ...FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_TEMPLATE,
+        createdBy: req.user.id,
+      });
+    } else {
+      const signatureFieldNames = ["hodName", "registrarName", "directorName"];
+      const currentFields = Array.isArray(template.fields) ? template.fields : [];
+      const filteredFields = currentFields.filter((field) => !signatureFieldNames.includes(field.name));
+
+      if (filteredFields.length !== currentFields.length) {
+        template.fields = filteredFields;
+        await template.save();
+      }
+    }
+
+    return res.json(template);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to load finance procurement recommendation sanction template" });
+  }
+};
+
 // @desc Create new form template
 const createTemplate = async (req, res) => {
   try {
@@ -141,20 +308,7 @@ const getAllTemplates = async (req, res) => {
     let genAdminTemplate = await FormTemplate.findOne({ code: GEN_ADMIN_TEMPLATE_CODE });
     if (!genAdminTemplate) {
       genAdminTemplate = await FormTemplate.create({
-        code: GEN_ADMIN_TEMPLATE_CODE,
-        title: "General Administration Self-Declaration",
-        description: "A self-declaration form for general administration purposes.",
-        fields: [
-          { label: "Salutation", name: "salutation", type: "select", required: true, options: ["Dr.", "Mr.", "Ms."] },
-          { label: "Full Name", name: "fullName", type: "text", required: true },
-          { label: "Designation", name: "designation", type: "text", required: true },
-          { label: "Dept./Section/Centre", name: "department", type: "text", required: true },
-          { label: "Employee Signature Name", name: "employeeSignatureName", type: "text", required: true },
-          { label: "Employee Number", name: "empNo", type: "text", required: true },
-          { label: "Place", name: "place", type: "text", required: true },
-          { label: "Date", name: "declarationDate", type: "date", required: true },
-        ],
-        approvalStages: [],
+        ...GEN_ADMIN_TEMPLATE,
         createdBy: req.user?.id || null,
       });
     }
@@ -173,6 +327,26 @@ const getAllTemplates = async (req, res) => {
     if (!ccLdapTemplate) {
       await FormTemplate.create({
         ...CC_LDAP_ACCOUNT_REQUEST_TEMPLATE,
+        createdBy: req.user?.id || null,
+      });
+    }
+
+    // Ensure General Administration vehicle requisition template exists
+    let genAdminVehicleRequisitionTemplate = await FormTemplate.findOne({ code: GEN_ADMIN_VEHICLE_REQUISITION_CODE });
+    if (!genAdminVehicleRequisitionTemplate) {
+      await FormTemplate.create({
+        ...GEN_ADMIN_VEHICLE_REQUISITION_TEMPLATE,
+        createdBy: req.user?.id || null,
+      });
+    }
+
+    // Ensure Finance procurement recommendation sanction template exists
+    let financeProcurementRecommendationSanctionTemplate = await FormTemplate.findOne({
+      code: FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE,
+    });
+    if (!financeProcurementRecommendationSanctionTemplate) {
+      await FormTemplate.create({
+        ...FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_TEMPLATE,
         createdBy: req.user?.id || null,
       });
     }
@@ -206,6 +380,8 @@ module.exports = {
   getAllTemplates,
   getMyTemplates,
   getGenAdminTemplate,
+  getGenAdminVehicleRequisitionTemplate,
   getSecurityCampusLeaveTemplate,
   getComputerCenterLdapAccountRequestTemplate,
+  getFinanceProcurementRecommendationSanctionTemplate,
 };

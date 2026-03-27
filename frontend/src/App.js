@@ -9,8 +9,10 @@ import BulkImport from "./pages/BulkImport";
 import Forms from "./pages/Forms";
 import FormFill from "./pages/FormFill";
 import GenAdminForm from "./forms/genadmin/GenAdminForm";  // self declaration form 
+import VehicleRequisitionForTransportForm from "./forms/genadmin/VehicleRequisitionForTransportForm";
 import SecurityCampusLeavePermissionForFemaleStudents from "./forms/security/SecurityCampusLeavePermissionForFemaleStudents";
 import ComputerCenterLdapAccountRequestForm from "./forms/cc/ComputerCenterLdapAccountRequestForm";
+import FinanceProcurementRecommendationSanctionForm from "./forms/fin/RecommendationCumSanctionSheetForPurchaseDoubleBidInrForm";
 import Submissions from "./pages/Submissions";
 import Approvals from "./pages/Approvals";
 import PrivateRoute from "./components/PrivateRoute";
@@ -76,6 +78,16 @@ function App() {
           }
         />
         <Route
+          path="/forms/gen-admin-vehicle-requisition-transport"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <VehicleRequisitionForTransportForm />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/forms/security-campus-leave-female"
           element={
             <PrivateRoute>
@@ -91,6 +103,16 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <ComputerCenterLdapAccountRequestForm />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/forms/finance-procurement-recommendation-sanction-double-bid-inr"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <FinanceProcurementRecommendationSanctionForm />
               </Layout>
             </PrivateRoute>
           }

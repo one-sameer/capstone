@@ -8,6 +8,7 @@ import {
   Chip,
   Stack,
   CircularProgress,
+  TextField,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import API from "../services/api";
@@ -27,7 +28,14 @@ const resolveSection = (template) => {
   const code = String(template?.code || "").toLowerCase();
   const section = String(template?.section || template?.category || "").toLowerCase();
 
-  if (code === "gen-admin" || section === "genadmin" || section === "gen-admin") return "genAdmin";
+  if (
+    code === "gen-admin" ||
+    code.startsWith("gen-admin-") ||
+    section === "genadmin" ||
+    section === "gen-admin"
+  ) {
+    return "genAdmin";
+  }
   if (section.includes("fac") || code.includes("faculty")) return "fac";
   if (section.includes("student") || code.includes("student")) return "snp";
   if (
@@ -38,7 +46,7 @@ const resolveSection = (template) => {
   ) {
     return "cc";
   }
-  if (section.includes("finance") || code.includes("finance")) return "fin";
+  if (section === "fin" || section.includes("finance") || code.includes("finance")) return "fin";
   if (section.includes("establishment") || code.includes("establishment")) return "estb";
   if (section.includes("security") || code.includes("security")) return "security";
 
@@ -50,6 +58,7 @@ const Forms = () => {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -128,7 +137,18 @@ const Forms = () => {
   );
 
   const renderSection = (sectionKey, customContent = null) => {
-    const templatesInSection = sectionBuckets[sectionKey] || [];
+    const search = searchQuery.trim().toLowerCase();
+    const templatesInSection = (sectionBuckets[sectionKey] || []).filter((tpl) => {
+      if (!search) return true;
+      const title = String(tpl.title || "").toLowerCase();
+      const description = String(tpl.description || "").toLowerCase();
+      const code = String(tpl.code || "").toLowerCase();
+      return (
+        title.includes(search) ||
+        description.includes(search) ||
+        code.includes(search)
+      );
+    });
 
     return (
       <Box sx={{ mb: 3 }}>
@@ -161,13 +181,35 @@ const Forms = () => {
 
   return (
     <Container maxWidth="md">
-      <Box sx={{ mt: 4, mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box
+        sx={{
+          mt: 4,
+          mb: 3,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          gap: 2,
+          flexWrap: "wrap",
+        }}
+      >
         <Typography variant="h4" fontWeight={700}>
           Available Forms
         </Typography>
-        <Button variant="text" onClick={() => navigate("/dashboard")}>
-          ← Dashboard
-        </Button>
+
+        <Box sx={{ width: { xs: "100%", md: 360 }, ml: { md: "auto" } }}>
+          <TextField
+            fullWidth
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Search forms by title, description, or code"
+            size="small"
+          />
+          <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 1 }}>
+            <Button variant="text" onClick={() => navigate("/dashboard")}>
+              ← Dashboard
+            </Button>
+          </Box>
+        </Box>
       </Box>
 
       {error && (
@@ -176,10 +218,7 @@ const Forms = () => {
         </Typography>
       )}
 
-      {renderSection(
-        "genAdmin"
-      )}
-
+      {renderSection("genAdmin")}
       {renderSection("fac")}
       {renderSection("snp")}
       {renderSection("cc")}
