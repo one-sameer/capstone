@@ -3,13 +3,25 @@ const FormTemplate = require("../models/FormTemplate");
 const User = require("../models/User");
 const PDFDocument = require("pdfkit");
 const { renderGenAdminPdf } = require("../forms/genadmin/pdfGenerator");
+const { renderGenAdminVehicleRequisitionPdf } = require("../forms/genadmin/VehicleRequisitionForTransport");
 const { renderSecurityCampusLeavePermissionForFemaleStudentsPdf } = require("../forms/security/SecurityCampusLeavePermissionForFemaleStudents");
 const { renderComputerCenterRequestingLdapAccountPdf } = require("../forms/cc/ComputerCenterRequestingLdapAccountCreationOfProjectStaffTemporaryStaff");
+const { renderFinanceProcurementRecommendationSanctionPdf } = require("../forms/fin/RecommendationCumSanctionSheetForPurchaseDoubleBidInr");
+const { renderComputerCenterFacultyPerformaPdf } = require("../forms/cc/ComputerCenterFacultyPerformaForm");
+const { renderComputerCenterFacultyDeclarationPdf } = require("../forms/cc/ComputerCenterFacultyDeclarationForm");
+const { renderComputerCenterEmailAccountRequestPdf } = require("../forms/cc/ComputerCenterEmailAccountRequestForm");
+const { renderComputerCenterProxyLdapAccountRequestPdf } = require("../forms/cc/ComputerCenterProxyLdapAccountRequestForm");
 const { getResponseValue } = require("../utils/pdfUtils");
 
 const GEN_ADMIN_TEMPLATE_CODE = "gen-admin";
+const GEN_ADMIN_VEHICLE_REQUISITION_CODE = "gen-admin-vehicle-requisition-transport";
 const SECURITY_CAMPUS_LEAVE_FEMALE_CODE = "security-campus-leave-female";
 const CC_LDAP_ACCOUNT_REQUEST_CODE = "cc-ldap-account-request";
+const FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE = "finance-procurement-recommendation-sanction-double-bid-inr";
+const CC_FACULTY_PERFORMA_CODE = "cc-faculty-performa";
+const CC_FACULTY_DECLARATION_CODE = "cc-faculty-declaration";
+const CC_EMAIL_ACCOUNT_REQUEST_CODE = "cc-email-account-request";
+const CC_PROXY_LDAP_REQUEST_CODE = "cc-proxy-ldap-request";
 
 // @desc Submit a form
 // Body: { templateId, responses, parentSubmissionId? }
@@ -228,9 +240,19 @@ const generateSubmissionPDF = async (req, res) => {
 
     const templateCode = submission.template?.code || "";
     const isGenAdmin = templateCode === GEN_ADMIN_TEMPLATE_CODE;
+    const isGenAdminVehicleRequisition = templateCode === GEN_ADMIN_VEHICLE_REQUISITION_CODE;
     const isSecurityCampusLeaveFemale = templateCode === SECURITY_CAMPUS_LEAVE_FEMALE_CODE;
     const isComputerCenterLdapRequest = templateCode === CC_LDAP_ACCOUNT_REQUEST_CODE;
-    const doc = new PDFDocument({ margin: isGenAdmin ? 70 : 50, size: "A4" });
+    const isFinanceProcurementRecommendationSanction =
+      templateCode === FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE;
+    const isComputerCenterFacultyPerforma = templateCode === CC_FACULTY_PERFORMA_CODE;
+    const isComputerCenterFacultyDeclaration = templateCode === CC_FACULTY_DECLARATION_CODE;
+    const isComputerCenterEmailAccountRequest = templateCode === CC_EMAIL_ACCOUNT_REQUEST_CODE;
+    const isComputerCenterProxyLdapRequest = templateCode === CC_PROXY_LDAP_REQUEST_CODE;
+    const doc = new PDFDocument({
+      margin: isGenAdmin ? 70 : isGenAdminVehicleRequisition ? 52 : isFinanceProcurementRecommendationSanction ? 45 : 50,
+      size: "A4",
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -242,10 +264,22 @@ const generateSubmissionPDF = async (req, res) => {
 
     if (isGenAdmin) {
       renderGenAdminPdf(doc, submission);
+    } else if (isGenAdminVehicleRequisition) {
+      renderGenAdminVehicleRequisitionPdf(doc, submission);
     } else if (isSecurityCampusLeaveFemale) {
       renderSecurityCampusLeavePermissionForFemaleStudentsPdf(doc, submission);
     } else if (isComputerCenterLdapRequest) {
       renderComputerCenterRequestingLdapAccountPdf(doc, submission);
+    } else if (isFinanceProcurementRecommendationSanction) {
+      renderFinanceProcurementRecommendationSanctionPdf(doc, submission);
+    } else if (isComputerCenterFacultyPerforma) {
+      renderComputerCenterFacultyPerformaPdf(doc, submission);
+    } else if (isComputerCenterFacultyDeclaration) {
+      renderComputerCenterFacultyDeclarationPdf(doc, submission);
+    } else if (isComputerCenterEmailAccountRequest) {
+      renderComputerCenterEmailAccountRequestPdf(doc, submission);
+    } else if (isComputerCenterProxyLdapRequest) {
+      renderComputerCenterProxyLdapAccountRequestPdf(doc, submission);
     } else {
       // Header (logo placeholder + institute title)
       doc
