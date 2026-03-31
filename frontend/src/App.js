@@ -12,6 +12,8 @@ import GenAdminForm from "./forms/genadmin/GenAdminForm";  // self declaration f
 import SecurityCampusLeavePermissionForFemaleStudents from "./forms/security/SecurityCampusLeavePermissionForFemaleStudents";
 import SecurityDayScholarVehiclePermit from "./forms/security/SecurityDayScholarVehiclePermit";
 import SecurityMessWorkers from "./forms/security/SecurityMessWorkers";
+import SecurityPassRenewal from "./forms/security/SecurityPassRenewal";
+import SecurityRequisitionForEntryPass from "./forms/security/SecurityRequisitionForEntryPass";
 import ComputerCenterLdapAccountRequestForm from "./forms/cc/ComputerCenterLdapAccountRequestForm";
 import Submissions from "./pages/Submissions";
 import Approvals from "./pages/Approvals";
@@ -103,6 +105,26 @@ function App() {
             <PrivateRoute>
               <Layout>
                 <SecurityMessWorkers />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/forms/security-pass-renewal"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <SecurityPassRenewal />
+              </Layout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/forms/security-entry-pass"
+          element={
+            <PrivateRoute>
+              <Layout>
+                <SecurityRequisitionForEntryPass />
               </Layout>
             </PrivateRoute>
           }

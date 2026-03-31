@@ -6,6 +6,8 @@ const { renderGenAdminPdf } = require("../forms/genadmin/pdfGenerator");
 const { renderSecurityCampusLeavePermissionForFemaleStudentsPdf } = require("../forms/security/SecurityCampusLeavePermissionForFemaleStudents");
 const { renderSecurityDayScholarVehiclePermitPdf } = require("../forms/security/SecurityDayScholarVehiclePermit");
 const { renderSecurityMessWorkersPdf } = require("../forms/security/SecurityMessWorkers");
+const { renderSecurityPassRenewalPdf } = require("../forms/security/SecurityPassRenewal");
+const { renderSecurityRequisitionForEntryPassPdf } = require("../forms/security/SecurityRequisitionForEntryPass");
 const { renderComputerCenterRequestingLdapAccountPdf } = require("../forms/cc/ComputerCenterRequestingLdapAccountCreationOfProjectStaffTemporaryStaff");
 const { getResponseValue } = require("../utils/pdfUtils");
 
@@ -13,6 +15,8 @@ const GEN_ADMIN_TEMPLATE_CODE = "gen-admin";
 const SECURITY_CAMPUS_LEAVE_FEMALE_CODE = "security-campus-leave-female";
 const SECURITY_DAY_SCHOLAR_VEHICLE_PERMIT_CODE = "security-day-scholar-vehicle-permit";
 const SECURITY_MESS_WORKERS_CODE = "security-mess-workers";
+const SECURITY_PASS_RENEWAL_CODE = "security-pass-renewal";
+const SECURITY_ENTRY_PASS_CODE = "security-entry-pass";
 const CC_LDAP_ACCOUNT_REQUEST_CODE = "cc-ldap-account-request";
 
 // @desc Submit a form
@@ -236,6 +240,8 @@ const generateSubmissionPDF = async (req, res) => {
     const isSecurityDayScholarVehiclePermit = templateCode === SECURITY_DAY_SCHOLAR_VEHICLE_PERMIT_CODE;
     const isSecurityMessWorkers = templateCode === SECURITY_MESS_WORKERS_CODE;
     const isComputerCenterLdapRequest = templateCode === CC_LDAP_ACCOUNT_REQUEST_CODE;
+    const isSecurityPassRenewal = templateCode === SECURITY_PASS_RENEWAL_CODE;
+    const isSecurityEntryPass = templateCode === SECURITY_ENTRY_PASS_CODE;
     const doc = new PDFDocument({ margin: isGenAdmin ? 70 : 50, size: "A4" });
 
     res.setHeader("Content-Type", "application/pdf");
@@ -254,6 +260,10 @@ const generateSubmissionPDF = async (req, res) => {
       renderSecurityDayScholarVehiclePermitPdf(doc, submission);
     } else if (isSecurityMessWorkers) {
       renderSecurityMessWorkersPdf(doc, submission);
+    } else if (isSecurityPassRenewal) {
+      renderSecurityPassRenewalPdf(doc, submission);
+    } else if (isSecurityEntryPass) {
+      renderSecurityRequisitionForEntryPassPdf(doc, submission);
     } else if (isComputerCenterLdapRequest) {
       renderComputerCenterRequestingLdapAccountPdf(doc, submission);
     } else {

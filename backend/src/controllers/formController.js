@@ -4,6 +4,8 @@ const GEN_ADMIN_TEMPLATE_CODE = "gen-admin";
 const SECURITY_CAMPUS_LEAVE_FEMALE_CODE = "security-campus-leave-female";
 const SECURITY_DAY_SCHOLAR_VEHICLE_PERMIT_CODE = "security-day-scholar-vehicle-permit";
 const SECURITY_MESS_WORKERS_CODE = "security-mess-workers";
+const SECURITY_PASS_RENEWAL_CODE = "security-pass-renewal";
+const SECURITY_ENTRY_PASS_CODE = "security-entry-pass";
 const CC_LDAP_ACCOUNT_REQUEST_CODE = "cc-ldap-account-request";
 
 const SECURITY_CAMPUS_LEAVE_FEMALE_TEMPLATE = {
@@ -67,6 +69,45 @@ const SECURITY_MESS_WORKERS_TEMPLATE = {
     { label: "Worker 5 Aadhar", name: "worker5Aadhar", type: "text", required: false },
     { label: "Worker 6 Name", name: "worker6Name", type: "text", required: false },
     { label: "Worker 6 Aadhar", name: "worker6Aadhar", type: "text", required: false },
+  ],
+  approvalStages: [],
+};
+
+const SECURITY_PASS_RENEWAL_TEMPLATE = {
+  code: SECURITY_PASS_RENEWAL_CODE,
+  title: "Requisition for Renewal of Entry Pass",
+  description: "Renewal of entry pass for Domestic Help/Tutor/Driver/Supplier at IIT Patna.",
+  section: "security",
+  fields: [
+    { label: "Name of the Applicant", name: "applicantName", type: "text", required: true },
+    { label: "Date", name: "date", type: "date", required: false },
+    { label: "Flat No.(s)", name: "flatNo", type: "text", required: false },
+    { label: "Mobile No.", name: "mobileNo", type: "text", required: false },
+    { label: "Pass Number", name: "passNumber", type: "text", required: true },
+    { label: "Name & Mobile No. of the Pass Holder", name: "passHolderNameMobile", type: "text", required: false },
+  ],
+  approvalStages: [],
+};
+
+const SECURITY_ENTRY_PASS_TEMPLATE = {
+  code: SECURITY_ENTRY_PASS_CODE,
+  title: "Form for Entry Pass: Domestic Help/Tutor/Driver/Supplier",
+  description: "Requisition form for entry pass for domestic help, tutor, driver or supplier at IIT Patna.",
+  section: "security",
+  fields: [
+    { label: "Name of the Applicant",                   name: "applicantName",           type: "text",  required: true  },
+    { label: "Employee No.",                             name: "employeeNo",              type: "text",  required: false },
+    { label: "Designation",                              name: "designation",             type: "text",  required: false },
+    { label: "Department/Section",                       name: "department",              type: "text",  required: false },
+    { label: "Email id",                                 name: "emailId",                type: "text",  required: false },
+    { label: "Flat No.",                                 name: "flatNo",                 type: "text",  required: false },
+    { label: "Mobile No.",                               name: "mobileNo",               type: "text",  required: false },
+    { label: "Name of Domestic Help/Tutor/Driver/Supplier", name: "helperName",          type: "text",  required: true  },
+    { label: "Aadhar Card/ Photo Id No.",                name: "helperAadhar",           type: "text",  required: false },
+    { label: "Helper Mobile No.",                        name: "helperMobileNo",         type: "text",  required: false },
+    { label: "Visible identification mark",              name: "visibleIdentificationMark", type: "text", required: false },
+    { label: "Employed as",                              name: "employedAs",             type: "text",  required: false },
+    { label: "Campus entry & exit time",                 name: "campusEntryExitTime",    type: "text",  required: false },
   ],
   approvalStages: [],
 };
@@ -171,6 +212,32 @@ const getSecurityMessWorkersTemplate = async (req, res) => {
   }
 };
 
+const getSecurityPassRenewalTemplate = async (req, res) => {
+  try {
+    let template = await FormTemplate.findOne({ code: SECURITY_PASS_RENEWAL_CODE });
+    if (!template) {
+      template = await FormTemplate.create({ ...SECURITY_PASS_RENEWAL_TEMPLATE, createdBy: req.user.id });
+    }
+    return res.json(template);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to load security pass renewal template" });
+  }
+};
+
+const getSecurityEntryPassTemplate = async (req, res) => {
+  try {
+    let template = await FormTemplate.findOne({ code: SECURITY_ENTRY_PASS_CODE });
+    if (!template) {
+      template = await FormTemplate.create({ ...SECURITY_ENTRY_PASS_TEMPLATE, createdBy: req.user.id });
+    }
+    return res.json(template);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to load security entry pass template" });
+  }
+};
+
 const getComputerCenterLdapAccountRequestTemplate = async (req, res) => {
   try {
     let template = await FormTemplate.findOne({ code: CC_LDAP_ACCOUNT_REQUEST_CODE });
@@ -256,6 +323,18 @@ const getAllTemplates = async (req, res) => {
       await FormTemplate.create({ ...SECURITY_MESS_WORKERS_TEMPLATE, createdBy: req.user?.id || null });
     }
 
+    // Ensure Security Pass Renewal template exists
+    let securityPassRenewalTemplate = await FormTemplate.findOne({ code: SECURITY_PASS_RENEWAL_CODE });
+    if (!securityPassRenewalTemplate) {
+      await FormTemplate.create({ ...SECURITY_PASS_RENEWAL_TEMPLATE, createdBy: req.user?.id || null });
+    }
+
+    // Ensure Security Entry Pass template exists
+    let securityEntryPassTemplate = await FormTemplate.findOne({ code: SECURITY_ENTRY_PASS_CODE });
+    if (!securityEntryPassTemplate) {
+      await FormTemplate.create({ ...SECURITY_ENTRY_PASS_TEMPLATE, createdBy: req.user?.id || null });
+    }
+
     // Ensure Computer Center LDAP account request template exists
     let ccLdapTemplate = await FormTemplate.findOne({ code: CC_LDAP_ACCOUNT_REQUEST_CODE });
     if (!ccLdapTemplate) {
@@ -297,5 +376,7 @@ module.exports = {
   getSecurityCampusLeaveTemplate,
   getSecurityDayScholarVehiclePermitTemplate,
   getSecurityMessWorkersTemplate,
+  getSecurityPassRenewalTemplate,
+  getSecurityEntryPassTemplate,
   getComputerCenterLdapAccountRequestTemplate,
 };

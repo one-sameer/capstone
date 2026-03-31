@@ -7,6 +7,8 @@ const {
   getSecurityCampusLeaveTemplate,
   getSecurityDayScholarVehiclePermitTemplate,
   getSecurityMessWorkersTemplate,
+  getSecurityPassRenewalTemplate,
+  getSecurityEntryPassTemplate,
   getComputerCenterLdapAccountRequestTemplate,
 } = require("../controllers/formController");
 
@@ -34,6 +36,12 @@ router.get("/security-day-scholar-vehicle-permit/template", protect, getSecurity
 
 // Security – Mess Worker Initial Entry Form
 router.get("/security-mess-workers/template", protect, getSecurityMessWorkersTemplate);
+
+// Security – Pass Renewal (Domestic Help/Tutor/Driver/Supplier)
+router.get("/security-pass-renewal/template", protect, getSecurityPassRenewalTemplate);
+
+// Security – Entry Pass Requisition (Domestic Help/Tutor/Driver/Supplier)
+router.get("/security-entry-pass/template", protect, getSecurityEntryPassTemplate);
 
 // Computer Center – REQUEST / REQUISITION FORM (For LDAP Account)
 router.get("/computer-center-ldap-account-request/template", protect, getComputerCenterLdapAccountRequestTemplate);
