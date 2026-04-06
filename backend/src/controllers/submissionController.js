@@ -3,21 +3,44 @@ const FormTemplate = require("../models/FormTemplate");
 const User = require("../models/User");
 const PDFDocument = require("pdfkit");
 const { renderGenAdminPdf } = require("../forms/genadmin/pdfGenerator");
+const { renderGenAdminVehicleRequisitionPdf } = require("../forms/genadmin/VehicleRequisitionForTransport");
 const { renderSecurityCampusLeavePermissionForFemaleStudentsPdf } = require("../forms/security/SecurityCampusLeavePermissionForFemaleStudents");
 const { renderSecurityDayScholarVehiclePermitPdf } = require("../forms/security/SecurityDayScholarVehiclePermit");
 const { renderSecurityMessWorkersPdf } = require("../forms/security/SecurityMessWorkers");
 const { renderSecurityPassRenewalPdf } = require("../forms/security/SecurityPassRenewal");
 const { renderSecurityRequisitionForEntryPassPdf } = require("../forms/security/SecurityRequisitionForEntryPass");
+const { renderSecurityRequisitionForVehicleStickerPdf } = require("../forms/security/SecurityRequisitionForVehicleSticker");
+const { renderSecurityVehicleStickerRequitionForMarriedScholarPdf } = require("../forms/security/SecurityVehicleStickerRequitionForMarriedScholar");
+const {
+  renderSecurityUndertakingRegardingWorkerConductAndResponsibilityPdf,
+} = require("../forms/security/SecurityUndertakingRegardingWorkerConductAndResponsibility");
 const { renderComputerCenterRequestingLdapAccountPdf } = require("../forms/cc/ComputerCenterRequestingLdapAccountCreationOfProjectStaffTemporaryStaff");
+const { renderEstbDepartureRejoiningReportPdf } = require("../forms/estb/renderEstbDepartureRejoiningReportPdf");
+const { renderFinanceProcurementRecommendationSanctionPdf } = require("../forms/fin/RecommendationCumSanctionSheetForPurchaseDoubleBidInr");
+const { renderComputerCenterFacultyPerformaPdf } = require("../forms/cc/ComputerCenterFacultyPerformaForm");
+const { renderComputerCenterFacultyDeclarationPdf } = require("../forms/cc/ComputerCenterFacultyDeclarationForm");
+const { renderComputerCenterEmailAccountRequestPdf } = require("../forms/cc/ComputerCenterEmailAccountRequestForm");
+const { renderComputerCenterProxyLdapAccountRequestPdf } = require("../forms/cc/ComputerCenterProxyLdapAccountRequestForm");
 const { getResponseValue } = require("../utils/pdfUtils");
 
 const GEN_ADMIN_TEMPLATE_CODE = "gen-admin";
+const GEN_ADMIN_VEHICLE_REQUISITION_CODE = "gen-admin-vehicle-requisition-transport";
 const SECURITY_CAMPUS_LEAVE_FEMALE_CODE = "security-campus-leave-female";
 const SECURITY_DAY_SCHOLAR_VEHICLE_PERMIT_CODE = "security-day-scholar-vehicle-permit";
 const SECURITY_MESS_WORKERS_CODE = "security-mess-workers";
 const SECURITY_PASS_RENEWAL_CODE = "security-pass-renewal";
 const SECURITY_ENTRY_PASS_CODE = "security-entry-pass";
+const SECURITY_REQUISITION_FOR_VEHICLE_STICKER_CODE = "security_requisition_for_vehicle_sticker";
+const SECURITY_VEHICLE_STICKER_REQUITION_MARRIED_SCHOLAR_CODE = "security-vehicle-sticker-requition-for-married-scholar";
+const SECURITY_UNDERTAKING_REGARDING_WORKER_CONDUCT_AND_RESPONSIBILITY_CODE =
+  "security_undertaking_regarding_worker_conduct_and_responsibility";
 const CC_LDAP_ACCOUNT_REQUEST_CODE = "cc-ldap-account-request";
+const ESTB_DEPARTURE_REJOINING_CODE = "estb-departure-rejoining-report";
+const FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE = "finance-procurement-recommendation-sanction-double-bid-inr";
+const CC_FACULTY_PERFORMA_CODE = "cc-faculty-performa";
+const CC_FACULTY_DECLARATION_CODE = "cc-faculty-declaration";
+const CC_EMAIL_ACCOUNT_REQUEST_CODE = "cc-email-account-request";
+const CC_PROXY_LDAP_REQUEST_CODE = "cc-proxy-ldap-request";
 
 // @desc Submit a form
 // Body: { templateId, responses, parentSubmissionId? }
@@ -31,8 +54,11 @@ const submitForm = async (req, res) => {
         .json({ message: "Template and responses required" });
     }
 
-    // Ensure template exists
-    const template = await FormTemplate.findById(templateId);
+    // Ensure template exists — templateId may be a MongoDB ObjectId OR a template code string
+    const isObjectId = /^[a-f\d]{24}$/i.test(String(templateId));
+    const template = isObjectId
+      ? await FormTemplate.findById(templateId)
+      : await FormTemplate.findOne({ code: templateId });
     if (!template) {
       return res.status(404).json({ message: "Template not found" });
     }
@@ -56,16 +82,27 @@ const submitForm = async (req, res) => {
       parentSubmission = parent._id;
     }
 
-    const submission = await FormSubmission.create({
-      template: templateId,
+    // Prepare submission data
+    const submissionData = {
+      template: template._id,  // always store the real ObjectId
       submittedBy: req.user.id,
-      responses,
+      responses: new Map(Object.entries(responses)),
       status: "submitted",
       version,
       parentSubmission,
       approvalStages: template.approvalStages || [],
       currentStageIndex: 0,
-    });
+    };
+
+    // Handle photo upload if present
+    if (req.file) {
+      submissionData.photo = {
+        data: req.file.buffer,
+        contentType: req.file.mimetype,
+      };
+    }
+
+    const submission = await FormSubmission.create(submissionData);
 
     res.status(201).json(submission);
   } catch (error) {
@@ -236,13 +273,37 @@ const generateSubmissionPDF = async (req, res) => {
 
     const templateCode = submission.template?.code || "";
     const isGenAdmin = templateCode === GEN_ADMIN_TEMPLATE_CODE;
+    const isGenAdminVehicleRequisition = templateCode === GEN_ADMIN_VEHICLE_REQUISITION_CODE;
     const isSecurityCampusLeaveFemale = templateCode === SECURITY_CAMPUS_LEAVE_FEMALE_CODE;
     const isSecurityDayScholarVehiclePermit = templateCode === SECURITY_DAY_SCHOLAR_VEHICLE_PERMIT_CODE;
     const isSecurityMessWorkers = templateCode === SECURITY_MESS_WORKERS_CODE;
-    const isComputerCenterLdapRequest = templateCode === CC_LDAP_ACCOUNT_REQUEST_CODE;
     const isSecurityPassRenewal = templateCode === SECURITY_PASS_RENEWAL_CODE;
     const isSecurityEntryPass = templateCode === SECURITY_ENTRY_PASS_CODE;
-    const doc = new PDFDocument({ margin: isGenAdmin ? 70 : 50, size: "A4" });
+    const isSecurityRequisitionForVehicleSticker = templateCode === SECURITY_REQUISITION_FOR_VEHICLE_STICKER_CODE;
+    const isSecurityVehicleStickerRequitionForMarriedScholar =
+      templateCode === SECURITY_VEHICLE_STICKER_REQUITION_MARRIED_SCHOLAR_CODE;
+    const isSecurityUndertakingRegardingWorkerConductAndResponsibility =
+      templateCode === SECURITY_UNDERTAKING_REGARDING_WORKER_CONDUCT_AND_RESPONSIBILITY_CODE;
+    const isComputerCenterLdapRequest = templateCode === CC_LDAP_ACCOUNT_REQUEST_CODE;
+    const isEstbDepartureRejoining = templateCode === ESTB_DEPARTURE_REJOINING_CODE;
+    const isFinanceProcurementRecommendationSanction =
+      templateCode === FINANCE_PROCUREMENT_RECOMMENDATION_SANCTION_CODE;
+    const isComputerCenterFacultyPerforma = templateCode === CC_FACULTY_PERFORMA_CODE;
+    const isComputerCenterFacultyDeclaration = templateCode === CC_FACULTY_DECLARATION_CODE;
+    const isComputerCenterEmailAccountRequest = templateCode === CC_EMAIL_ACCOUNT_REQUEST_CODE;
+    const isComputerCenterProxyLdapRequest = templateCode === CC_PROXY_LDAP_REQUEST_CODE;
+    const doc = new PDFDocument({
+      margin: isGenAdmin
+        ? 70
+        : isGenAdminVehicleRequisition
+        ? 52
+        : isFinanceProcurementRecommendationSanction ||
+          isSecurityRequisitionForVehicleSticker ||
+          isSecurityVehicleStickerRequitionForMarriedScholar
+        ? 45
+        : 50,
+      size: "A4",
+    });
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -254,6 +315,8 @@ const generateSubmissionPDF = async (req, res) => {
 
     if (isGenAdmin) {
       renderGenAdminPdf(doc, submission);
+    } else if (isGenAdminVehicleRequisition) {
+      renderGenAdminVehicleRequisitionPdf(doc, submission);
     } else if (isSecurityCampusLeaveFemale) {
       renderSecurityCampusLeavePermissionForFemaleStudentsPdf(doc, submission);
     } else if (isSecurityDayScholarVehiclePermit) {
@@ -264,8 +327,26 @@ const generateSubmissionPDF = async (req, res) => {
       renderSecurityPassRenewalPdf(doc, submission);
     } else if (isSecurityEntryPass) {
       renderSecurityRequisitionForEntryPassPdf(doc, submission);
+    } else if (isSecurityRequisitionForVehicleSticker) {
+      renderSecurityRequisitionForVehicleStickerPdf(doc, submission);
+    } else if (isSecurityVehicleStickerRequitionForMarriedScholar) {
+      renderSecurityVehicleStickerRequitionForMarriedScholarPdf(doc, submission);
+    } else if (isSecurityUndertakingRegardingWorkerConductAndResponsibility) {
+      renderSecurityUndertakingRegardingWorkerConductAndResponsibilityPdf(doc, submission);
     } else if (isComputerCenterLdapRequest) {
       renderComputerCenterRequestingLdapAccountPdf(doc, submission);
+    } else if (isEstbDepartureRejoining) {
+      renderEstbDepartureRejoiningReportPdf(doc, submission);
+    } else if (isFinanceProcurementRecommendationSanction) {
+      renderFinanceProcurementRecommendationSanctionPdf(doc, submission);
+    } else if (isComputerCenterFacultyPerforma) {
+      renderComputerCenterFacultyPerformaPdf(doc, submission);
+    } else if (isComputerCenterFacultyDeclaration) {
+      renderComputerCenterFacultyDeclarationPdf(doc, submission);
+    } else if (isComputerCenterEmailAccountRequest) {
+      renderComputerCenterEmailAccountRequestPdf(doc, submission);
+    } else if (isComputerCenterProxyLdapRequest) {
+      renderComputerCenterProxyLdapAccountRequestPdf(doc, submission);
     } else {
       // Header (logo placeholder + institute title)
       doc

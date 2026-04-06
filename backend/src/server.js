@@ -7,7 +7,6 @@ const formRoutes = require("./routes/formRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 
-
 const app = express();
 
 // Middleware
