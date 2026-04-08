@@ -197,5 +197,5 @@ Build an institute form portal that replaces Word-based forms with web forms, PD
 - [ ] A styled PDF with logo/header is generated.
 - [ ] User can view submission history.
 - [ ] User can use `edit as new` from an old submission.
-- [ ] Approval chain can vary by form.
+- [ ] Approval chain can vary by form
 - [ ] Full system runs through Docker with exact dependency versions.
