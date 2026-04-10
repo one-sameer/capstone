@@ -21,6 +21,7 @@ import SecurityVehicleStickerRequitionForMarriedScholar from "./forms/security/S
 import SecurityUndertakingRegardingWorkerConductAndResponsibility from "./forms/security/SecurityUndertakingRegardingWorkerConductAndResponsibility";
 import ComputerCenterLdapAccountRequestForm from "./forms/cc/ComputerCenterLdapAccountRequestForm";
 import EstbDepartureRejoiningReportForm from "./forms/estb/EstbDepartureRejoiningReportForm";
+import EstbHouseAllotmentDTypeForm from "./forms/estb/EstbHouseAllotmentDTypeForm";
 import ComputerCenterFacultyPerformaForm from "./forms/cc/ComputerCenterFacultyPerformaForm";
 import ComputerCenterFacultyDeclarationForm from "./forms/cc/ComputerCenterFacultyDeclarationForm";
 import ComputerCenterEmailAccountRequestForm from "./forms/cc/ComputerCenterEmailAccountRequestForm";
@@ -218,6 +219,16 @@ function App() {
     <PrivateRoute>
       <Layout>
         <EstbDepartureRejoiningReportForm />
+      </Layout>
+    </PrivateRoute>
+  }
+/>
+<Route
+  path="/forms/estb-house-allotment-d-type"
+  element={
+    <PrivateRoute>
+      <Layout>
+        <EstbHouseAllotmentDTypeForm />
       </Layout>
     </PrivateRoute>
   }

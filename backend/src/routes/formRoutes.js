@@ -15,7 +15,8 @@ const {
   getSecurityUndertakingRegardingWorkerConductAndResponsibilityTemplate,
   getComputerCenterLdapAccountRequestTemplate,
   getEstbDepartureRejoiningTemplate,
-  getFinanceProcurementRecommendationSanctionTemplate,
+ getEstbHouseAllotmentDTypeTemplate,
+ getFinanceProcurementRecommendationSanctionTemplate,
   getComputerCenterFacultyPerformaTemplate,
   getComputerCenterFacultyDeclarationTemplate,
   getComputerCenterEmailAccountRequestTemplate,
@@ -87,6 +88,7 @@ router.get("/computer-center-ldap-account-request/template", protect, getCompute
 
 // Establishment – Departure & Re-joining Report
 router.get("/estb-departure-rejoining-report/template", protect, getEstbDepartureRejoiningTemplate);
+router.get("/estb-house-allotment-d-type/template", protect, getEstbHouseAllotmentDTypeTemplate);
 
 // Finance - Recommendation cum Sanction Sheet for Purchase (Double Bid Tendering - INR)
 router.get(

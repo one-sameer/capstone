@@ -19,6 +19,8 @@ const CC_EMAIL_ACCOUNT_REQUEST_CODE = "cc-email-account-request";
 const CC_PROXY_LDAP_REQUEST_CODE = "cc-proxy-ldap-request";
 const CC_RD_RECOMMENDATION_GEM_CODE = "cc-rd-recommendation-gem";
 const CC_RD_TWO_BID_GEM_CODE = "cc-rd-two-bid-gem";
+const ESTB_HOUSE_ALLOTMENT_D_TYPE_CODE = "estb-house-allotment-d-type";
+const ESTB_DEPARTURE_REJOINING_CODE = "estb-departure-rejoining-report";
 
 const GEN_ADMIN_TEMPLATE = {
   code: GEN_ADMIN_TEMPLATE_CODE,
@@ -110,7 +112,7 @@ const SECURITY_CAMPUS_LEAVE_FEMALE_TEMPLATE = {
   ],
   approvalStages: [],
 };
-const ESTB_DEPARTURE_REJOINING_CODE = "estb-departure-rejoining-report";
+
 
 const ESTB_DEPARTURE_REJOINING_TEMPLATE = {
   code: ESTB_DEPARTURE_REJOINING_CODE,
@@ -137,6 +139,28 @@ const ESTB_DEPARTURE_REJOINING_TEMPLATE = {
     { label: "Re-joining Emp. No.", name: "rejoiningEmpNo", type: "text", required: false },
     { label: "Re-joining Designation", name: "rejoiningDesignation", type: "text", required: false },
     { label: "Re-joining Department", name: "rejoiningDepartment", type: "text", required: false },
+  ],
+  approvalStages: [],
+};
+ 
+const ESTB_HOUSE_ALLOTMENT_D_TYPE_TEMPLATE = {
+  code: ESTB_HOUSE_ALLOTMENT_D_TYPE_CODE,
+  title: "House Allotment Form – D Type Quarters",
+  description: "Establishment house allotment application form for D type quarters.",
+  section: "estb",
+  fields: [
+    { label: "Circular No.", name: "circularNo", type: "text", required: false },
+    { label: "Name", name: "name", type: "text", required: true },
+    { label: "Employee ID", name: "employeeId", type: "text", required: true },
+    { label: "Designation", name: "designation", type: "text", required: true },
+    { label: "Present Level in Pay Matrix (As per 7th CPC)", name: "payMatrixLevel", type: "text", required: false },
+    { label: "Deptt./Section", name: "deptSection", type: "text", required: false },
+    { label: "Date of joining", name: "dateOfJoining", type: "date", required: false },
+    { label: "E-mail", name: "email", type: "text", required: false },
+    { label: "Marital Status", name: "maritalStatus", type: "text", required: false },
+    { label: "Bachelor Accommodation Preferred (Y/N)", name: "bachelorAccommodation", type: "text", required: false },
+    { label: "Quarter Preferences", name: "quarterPreferences", type: "text", required: false },
+    { label: "Present Quarter No./Present Address", name: "presentQuarterAddress", type: "text", required: false },
   ],
   approvalStages: [],
 };
@@ -785,6 +809,21 @@ const getEstbDepartureRejoiningTemplate = async (req, res) => {
     return res.status(500).json({ message: "Failed to load departure/rejoining template" });
   }
 };
+const getEstbHouseAllotmentDTypeTemplate = async (req, res) => {
+  try {
+    let template = await FormTemplate.findOne({ code: ESTB_HOUSE_ALLOTMENT_D_TYPE_CODE });
+    if (!template) {
+      template = await FormTemplate.create({
+        ...ESTB_HOUSE_ALLOTMENT_D_TYPE_TEMPLATE,
+        createdBy: req.user.id,
+      });
+    }
+    return res.json(template);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Failed to load house allotment template" });
+  }
+};
 
 const getFinanceProcurementRecommendationSanctionTemplate = async (req, res) => {
   try {
@@ -1103,6 +1142,13 @@ const getAllTemplates = async (req, res) => {
         createdBy: req.user?.id || null,
       });
     }
+   let estbHouseAllotmentTemplate = await FormTemplate.findOne({ code: ESTB_HOUSE_ALLOTMENT_D_TYPE_CODE });
+if (!estbHouseAllotmentTemplate) {
+  await FormTemplate.create({
+    ...ESTB_HOUSE_ALLOTMENT_D_TYPE_TEMPLATE,
+    createdBy: req.user?.id || null,
+  });
+}
 
     const templates = await FormTemplate.find()
       .populate("createdBy", "name email")
@@ -1144,6 +1190,7 @@ module.exports = {
   getSecurityUndertakingRegardingWorkerConductAndResponsibilityTemplate,
   getComputerCenterLdapAccountRequestTemplate,
   getEstbDepartureRejoiningTemplate,
+  getEstbHouseAllotmentDTypeTemplate,
   getFinanceProcurementRecommendationSanctionTemplate,
   getComputerCenterFacultyPerformaTemplate,
   getComputerCenterFacultyDeclarationTemplate,
