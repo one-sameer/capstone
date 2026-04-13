@@ -24,6 +24,7 @@ const { renderComputerCenterEmailAccountRequestPdf } = require("../forms/cc/Comp
 const { renderComputerCenterProxyLdapAccountRequestPdf } = require("../forms/cc/ComputerCenterProxyLdapAccountRequestForm");
 const { renderCCRDRecommendationDirectPurchaseGeMPdf } = require("../forms/cc/CCRDRecommendationDirectPurchaseGeM");
 const { renderCCRDRecommendationTwoBidPurchaseGeMPdf } = require("../forms/cc/CCRDRecommendationTwoBidPurchaseGeM");
+const { renderStoresStationeryIndentPdf } = require("../forms/snp/StoreStationeryIndentPdf");
 const { getResponseValue } = require("../utils/pdfUtils");
 
 const GEN_ADMIN_TEMPLATE_CODE = "gen-admin";
@@ -47,6 +48,7 @@ const CC_EMAIL_ACCOUNT_REQUEST_CODE = "cc-email-account-request";
 const CC_PROXY_LDAP_REQUEST_CODE = "cc-proxy-ldap-request";
 const CC_RD_RECOMMENDATION_GEM_CODE = "cc-rd-recommendation-gem";
 const CC_RD_TWO_BID_GEM_CODE = "cc-rd-two-bid-gem";
+const STORES_STATIONERY_INDENT_CODE = "stores-stationery-indent";
 
 // @desc Submit a form
 // Body: { templateId, responses, parentSubmissionId? }
@@ -301,6 +303,7 @@ const isEstbHouseAllotmentDType = templateCode === ESTB_HOUSE_ALLOTMENT_D_TYPE_C
     const isComputerCenterProxyLdapRequest = templateCode === CC_PROXY_LDAP_REQUEST_CODE;
     const isCCRDRecommendationGeM = templateCode === CC_RD_RECOMMENDATION_GEM_CODE;
     const isCCRDTwoBidGeM = templateCode === CC_RD_TWO_BID_GEM_CODE;
+    const isStoresStationeryIndent = templateCode === STORES_STATIONERY_INDENT_CODE;
 
     const doc = new PDFDocument({
       margin: isGenAdmin
@@ -364,7 +367,10 @@ const isEstbHouseAllotmentDType = templateCode === ESTB_HOUSE_ALLOTMENT_D_TYPE_C
       renderCCRDRecommendationDirectPurchaseGeMPdf(doc, submission);
     } else if (isCCRDTwoBidGeM) {
       renderCCRDRecommendationTwoBidPurchaseGeMPdf(doc, submission);
-    } else {
+    } else if (isStoresStationeryIndent) {
+      renderStoresStationeryIndentPdf(doc, submission);
+    }
+    else {
       // Header (logo placeholder + institute title)
       doc
         .fontSize(22)
